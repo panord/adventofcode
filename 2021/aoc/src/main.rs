@@ -5,42 +5,27 @@ use std::fs::File;
 use std::io::{stdin, stdout, BufRead, BufReader};
 use String;
 
-fn do_sweep<X>(reader: &mut X, n: usize, offset: usize) -> u64
-where
-    X: std::io::BufRead,
-{
-    let mut last: i64 = std::i64::MAX;
-    let mut sum: i64 = 0;
-    let mut cnt: u64 = 0;
-
-    for (i, line) in reader.by_ref().lines().enumerate().advance(offset) {
-        let l = line.unwrap();
-        if l.is_empty() {
-            break;
-        }
-        sum += l.parse::<i64>().unwrap();
-
-        if i % n == 0 {
-            if sum > last {
-                cnt += 1;
-            }
-            last = sum;
-            sum = 0;
-        }
-    }
-    return cnt;
-}
-
-fn sonar_sweep<X, Y>(input: X, out: &mut Y, n: usize)
+fn sonar_sweep<X, Y>(input: X, out: &mut Y)
 where
     X: std::io::Read,
     Y: std::io::Write,
 {
-    let mut reader = BufReader::new(input);
+    let reader = BufReader::new(input);
+    let mut last: i64 = std::i64::MAX;
+    let mut curr: i64;
     let mut cnt: u64 = 0;
-    for i in 0..n {
-        cnt += do_sweep(&mut reader, n, i);
+    for line in reader.lines().into_iter() {
+        let l = line.unwrap();
+        if l.is_empty() {
+            break;
+        }
+        curr = l.parse::<i64>().unwrap();
+        if curr > last {
+            cnt += 1;
+        }
+        last = curr;
     }
+
     out.write(format!("Growing: {}\n", cnt).as_ref())
         .expect("Failed to write result");
 }
@@ -63,8 +48,7 @@ fn solve(args: &ArgMatches) -> Result<()> {
         .unwrap_or(Left(stdout()));
 
     match a {
-        1 => sonar_sweep(input, &mut output, 1),
-        2 => sonar_sweep(input, &mut output, 3),
+        1 => sonar_sweep(input, &mut output),
         _ => println!("Unsupported assignment {}", a),
     };
     Ok(())
