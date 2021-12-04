@@ -5,20 +5,28 @@ use std::fs::File;
 use std::io::{stdin, stdout, BufRead, BufReader};
 use String;
 
+fn from_lines<X, Y, Z>(input: X) -> Z
+where
+    X: std::io::Read,
+    Y: std::str::FromStr,
+    <Y as std::str::FromStr>::Err: std::fmt::Debug,
+    Z: std::iter::FromIterator<Y>,
+{
+    BufReader::new(input)
+        .lines()
+        .into_iter()
+        .map(|r| r.and_then(|r| Ok(r.parse::<Y>().unwrap())).unwrap())
+        .collect()
+}
+
 fn sonar_sweep<X, Y>(input: X, out: &mut Y, n: usize)
 where
     X: std::io::Read,
     Y: std::io::Write,
 {
-    let reader = BufReader::new(input);
     let mut last: i64 = std::i64::MAX;
     let mut cnt: u64 = 0;
-
-    let mut vals: Vec<i64> = reader
-        .lines()
-        .into_iter()
-        .map(|r| r.and_then(|r| Ok(r.parse::<i64>().unwrap())).unwrap_or(0))
-        .collect();
+    let mut vals: Vec<i64> = from_lines(input);
 
     for i in 0..vals.len() - (n - 1) {
         for j in 1..n {
