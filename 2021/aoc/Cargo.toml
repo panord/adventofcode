@@ -9,3 +9,8 @@ edition = "2021"
 clap = "2.34.0"
 anyhow = "1.0.51"
 either = "1.6.1"
+
+
+[lib]
+name = "aoc"
+path = "src/lib.rs"
