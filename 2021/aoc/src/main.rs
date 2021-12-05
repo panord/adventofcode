@@ -5,6 +5,52 @@ use std::fs::File;
 use std::io::{stdin, stdout};
 use String;
 
+fn dive<X, Y>(input: X, out: &mut Y, aim: bool)
+where
+    X: std::io::Read,
+    Y: std::io::Write,
+{
+    let vals: Vec<aoc::Move> = aoc::from_lines(input);
+    let orig = aoc::Pos { x: 0, y: 0, aim: 0 };
+    let dest = if aim {
+        aoc::dive_aim(orig, vals)
+    } else {
+        aoc::dive(orig, vals)
+    };
+
+    out.write(format!("Position: {:?}\n", dest).as_ref())
+        .expect("Failed to write result");
+
+    out.write(format!("x * y: {}\n", dest.x * dest.y).as_ref())
+        .expect("Failed to write result");
+}
+
+fn sonar_sweep<X, Y>(input: X, out: &mut Y, n: usize)
+where
+    X: std::io::Read,
+    Y: std::io::Write,
+{
+    let mut vals: Vec<i64> = aoc::from_lines(input);
+    let cnt = aoc::sonar_sweep(&mut vals, n);
+
+    out.write(format!("Growing: {}\n", cnt).as_ref())
+        .expect("Failed to write result");
+}
+
+fn do_solve<X, Y>(assign: u8, input: X, output: &mut Y)
+where
+    X: std::io::Read,
+    Y: std::io::Write,
+{
+    match assign {
+        1 => sonar_sweep(input, output, 1),
+        2 => sonar_sweep(input, output, 3),
+        3 => dive(input, output, false),
+        4 => dive(input, output, true),
+        _ => println!("Unsupported assignment {}", assign),
+    };
+}
+
 pub fn solve(args: &ArgMatches) {
     let a = value_t!(args.value_of("assignment"), u8)
         .context("Could not parse assignment number")
@@ -23,7 +69,7 @@ pub fn solve(args: &ArgMatches) {
         .and_then(|f| Ok(Right(std::io::BufWriter::new(f))))
         .unwrap_or(Left(stdout()));
 
-    aoc::do_solve(a, input, &mut output);
+    do_solve(a, input, &mut output);
 }
 
 fn main() {
