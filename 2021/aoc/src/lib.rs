@@ -15,6 +15,55 @@ where
         .collect()
 }
 
+fn bit_count(val: &str) -> (usize, usize) {
+    let mut cnt = 0;
+    for c in val.chars() {
+        if c == '1' {
+            cnt += 1;
+        }
+    }
+    return (cnt, val.len() - cnt);
+}
+
+pub fn transpose<X>(orig: &Vec<X>, trans: &mut Vec<X>, width: usize, height: usize)
+where
+    X: std::marker::Copy,
+{
+    for c in 0..width {
+        for r in 0..height {
+            let elem = orig.get(c + r * width).unwrap();
+            trans.push(*elem);
+        }
+    }
+}
+
+pub fn binary_diagnostic(diag: &[String]) -> (u64, u64) {
+    let flat: Vec<char> = diag.iter().flat_map(|s| s.chars()).collect();
+    let mut trans: Vec<char> = vec![];
+    let mut joined: Vec<String> = vec![];
+    let mut dominant: Vec<char> = vec![];
+
+    transpose(&flat, &mut trans, diag[0].len(), diag.len());
+    for (i, _) in trans.iter().step_by(diag.len()).enumerate() {
+        let n = trans[i..i + diag.len()].iter().collect::<String>();
+        println!("{}..{}+{}:{:?}", i, i, diag.len(), &n);
+        joined.push(n);
+    }
+
+    for j in &joined {
+        let (ones, zeros) = bit_count(&j);
+        if ones > zeros {
+            dominant.push('1')
+        } else {
+            dominant.push('0')
+        }
+    }
+    println!("{:?}", trans);
+    println!("{:?}", joined);
+    println!("{:?}", dominant);
+    return (0, 0);
+}
+
 #[derive(Clone)]
 pub enum Direction {
     FORWARD,

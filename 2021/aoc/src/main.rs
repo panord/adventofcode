@@ -5,6 +5,18 @@ use std::fs::File;
 use std::io::{stdin, stdout};
 use String;
 
+fn binary_diagnostic<X, Y>(input: X, out: &mut Y)
+where
+    X: std::io::Read,
+    Y: std::io::Write,
+{
+    let vals: Vec<String> = aoc::from_lines(input);
+    let (gamma, epsilon) = aoc::binary_diagnostic(&vals.as_slice());
+
+    out.write(format!("Gamma: {}\nEpsilon: {}", gamma, epsilon).as_ref())
+        .expect("Failed to write result");
+}
+
 fn dive<X, Y>(input: X, out: &mut Y, aim: bool)
 where
     X: std::io::Read,
@@ -47,6 +59,7 @@ where
         2 => sonar_sweep(input, output, 3),
         3 => dive(input, output, false),
         4 => dive(input, output, true),
+        5 => binary_diagnostic(input, output),
         _ => println!("Unsupported assignment {}", assign),
     };
 }
