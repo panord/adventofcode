@@ -3,10 +3,8 @@
 
 import std/rdstdin
 import std/enumerate
-from std/strutils import parseUInt, splitLines, isUpperAscii
+from std/strutils import parseUInt, splitLines, isUpperAscii, split
 from std/sequtils import filter
-
-
 
 proc max[T: SomeInteger](list: seq[T]): (int, T) =
         var m: T = 0
@@ -120,6 +118,43 @@ proc calc_choice[T: SomeInteger](cand: char, opp: char, score: var T): void =
         else:
                 raise newException(ValueError, "Invalid rock paper scissor outcome")
 
+
+proc taskFour(part: Natural): void =
+    let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
+    var tot: uint64 = 0;
+    case part:
+    of 1:
+        for r in input:
+            let ranges = split(r, ',')
+            let r1 = split(ranges[0], '-')
+            let r2 = split(ranges[1], '-')
+
+            let s1 = parseUInt(r1[0])
+            let e1 = parseUInt(r1[1])
+            let s2 = parseUInt(r2[0])
+            let e2 = parseUInt(r2[1])
+
+            if s1 <= s2 and e2 <= e1 or s2 <= s1 and e1 <= e2:
+                tot += 1
+    of 2:
+        for r in input:
+            let ranges = split(r, ',')
+            let r1 = split(ranges[0], '-')
+            let r2 = split(ranges[1], '-')
+
+            let s1 = parseUInt(r1[0])
+            let e1 = parseUInt(r1[1])
+            let s2 = parseUInt(r2[0])
+            let e2 = parseUInt(r2[1])
+
+            if s1 <= e2 and e1 >= s2 or s2 <= e1 and e2 >= s1:
+                tot += 1
+    else:
+        raise newException(ValueError, "Invalid task part")
+
+
+    echo "Tot: ", tot
+
 proc taskThree(part: Natural): void =
     const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
@@ -212,6 +247,8 @@ proc main(): int =
                 taskTwo(parseUInt(partStr))
         of 3:
                 taskThree(parseUInt(partStr))
+        of 4:
+                taskFour(parseUInt(partStr))
         else:
                 echo("Not implemented!")
 
