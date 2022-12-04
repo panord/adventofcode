@@ -3,7 +3,7 @@
 
 import std/rdstdin
 import std/enumerate
-from std/strutils import parseUInt, splitLines
+from std/strutils import parseUInt, splitLines, isUpperAscii
 from std/sequtils import filter
 
 
@@ -120,20 +120,50 @@ proc calc_choice[T: SomeInteger](cand: char, opp: char, score: var T): void =
         else:
                 raise newException(ValueError, "Invalid rock paper scissor outcome")
 
+proc taskThree(part: Natural): void =
+    const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
+    var tot: uint64 = 0;
+
+    case part:
+    of 1:
+        for r in input:
+            for i, c in enumerate(letters):
+                let c1 = r[0 .. r.len div 2 - 1]
+                let c2 = r[r.len div 2 .. ^1]
+                if c1.contains(c) and c2.contains(c):
+                    let prio = cast[uint64](i) + 1
+                    tot += prio
+                    echo c, " in ", r, "tot: ", prio
+    of 2:
+        var i = 0
+        while i < input.len:
+            for k, c in enumerate(letters):
+                if input[i].contains(c) and input[i+1].contains(c) and input[i+2].contains(c):
+                    let prio = cast[uint64](k) + 1
+                    tot += prio
+                    break
+            i += 3
+    else:
+        raise newException(ValueError, "Invalid task part")
+
+
+    echo "Tot prio: ", tot
+
 
 proc taskTwo(part: Natural): void =
-        let input = splitLines(readAll(stdin))
-        var score: uint64 = 0;
-        for l in filter(input, proc(x: string): bool = x != ""):
-                case part:
-                of 1:
-                        calc_score(l[2], l[0], score)
-                of 2:
-                        calc_choice(l[2], l[0], score)
-                else:
-                        raise newException(ValueError, "Invalid task part")
+    let input = splitLines(readAll(stdin))
+    var score: uint64 = 0;
+    for l in filter(input, proc(x: string): bool = x != ""):
+            case part:
+            of 1:
+                    calc_score(l[2], l[0], score)
+            of 2:
+                    calc_choice(l[2], l[0], score)
+            else:
+                    raise newException(ValueError, "Invalid task part")
 
-        echo "Total score: ", score
+    echo "Total score: ", score
 
 proc taskOne(): void =
         var list: seq[uint64]
@@ -180,6 +210,8 @@ proc main(): int =
                 taskOne()
         of 2:
                 taskTwo(parseUInt(partStr))
+        of 3:
+                taskThree(parseUInt(partStr))
         else:
                 echo("Not implemented!")
 
