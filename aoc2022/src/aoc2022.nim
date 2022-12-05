@@ -3,8 +3,9 @@
 
 import std/rdstdin
 import std/enumerate
-from std/strutils import parseUInt, splitLines, isUpperAscii, split
-from std/sequtils import filter
+from std/strutils import parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
+from std/sequtils import filter, map
+from std/lists import DoublyLinkedList, initDoublyLinkedList, prepend, append
 
 proc max[T: SomeInteger](list: seq[T]): (int, T) =
         var m: T = 0
@@ -117,6 +118,82 @@ proc calc_choice[T: SomeInteger](cand: char, opp: char, score: var T): void =
 
         else:
                 raise newException(ValueError, "Invalid rock paper scissor outcome")
+
+
+proc taskFive(part: Natural): void =
+    let input = splitLines(readAll(stdin))
+    var tot: uint64 = 0
+    var stacks: seq[seq[string]]
+
+    var p = 0
+    echo "Building stacks"
+    for r in input:
+        if r == "":
+            break
+
+        var tops: seq[string]
+        var i = 0
+        while i < r.len:
+            if i > r.len - 4:
+                tops.add(r[i..^1])
+            else:
+                tops.add(r[i..i+3])
+            i += 4
+
+        if r.find('1') > 0:
+            p += 2
+            break
+
+        let crates = tops.len
+        for i,t in enumerate(tops):
+            if i >= stacks.len:
+                var st: seq[string]
+                stacks.add(st)
+
+            if tops[i] != "":
+                stacks[i].insert(t)
+        p += 1
+
+    stacks = map(stacks, proc(x: seq[string]): seq[string] =
+        filter(x, proc(y: string): bool =
+            for c in y:
+                if c != ' ':
+                    return true
+        ))
+    echo "Processing moves"
+    for i in p .. input.len - 1:
+        let r = split(input[i], ' ')
+        if r.len < 5:
+            break
+
+        let cnt = parseUInt(r[1])
+        let frm = parseUInt(r[3]) - 1
+        let to = parseUInt(r[5]) - 1
+
+        case part:
+        of 1:
+            for j in 1..cnt:
+                stacks[to].add(stacks[frm][^1])
+                stacks[frm].delete(stacks[frm].len - 1)
+        of 2:
+            for j in 1..cnt:
+                stacks[to].add(stacks[frm][stacks[frm].len - cast[int]((cnt - j + 1))])
+
+            for j in 1..cnt:
+                stacks[frm].delete(stacks[frm].len - 1)
+        else:
+            raise newException(ValueError, "Invalid task part")
+
+
+    var res = ""
+    for i in stacks:
+        res.add(i[^1].multiReplace( ("[", ""), ("]", "")))
+
+    echo res.replace(" ", "")
+
+
+
+
 
 
 proc taskFour(part: Natural): void =
@@ -249,6 +326,8 @@ proc main(): int =
                 taskThree(parseUInt(partStr))
         of 4:
                 taskFour(parseUInt(partStr))
+        of 5:
+                taskFive(parseUInt(partStr))
         else:
                 echo("Not implemented!")
 
