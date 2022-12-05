@@ -5,7 +5,6 @@ import std/rdstdin
 import std/enumerate
 from std/strutils import parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
 from std/sequtils import filter, map
-from std/lists import DoublyLinkedList, initDoublyLinkedList, prepend, append
 
 proc max[T: SomeInteger](list: seq[T]): (int, T) =
         var m: T = 0
@@ -119,6 +118,8 @@ proc calc_choice[T: SomeInteger](cand: char, opp: char, score: var T): void =
         else:
                 raise newException(ValueError, "Invalid rock paper scissor outcome")
 
+proc taskSix(part: Natural): void =
+    echo "not implemented"
 
 proc taskFive(part: Natural): void =
     let input = splitLines(readAll(stdin))
@@ -305,7 +306,6 @@ proc taskOne(): void =
 
 
 proc main(): int =
-        echo("Hello, World!")
         var taskStr: string
         var partStr: string
 
@@ -317,19 +317,27 @@ proc main(): int =
                 echo "Failed to read task part"
                 return -1
 
-        case parseUInt(taskStr)
-        of 1:
-                taskOne()
-        of 2:
-                taskTwo(parseUInt(partStr))
-        of 3:
-                taskThree(parseUInt(partStr))
-        of 4:
-                taskFour(parseUInt(partStr))
-        of 5:
-                taskFive(parseUInt(partStr))
-        else:
-                echo("Not implemented!")
+        try:
+            let task = parseUint(taskStr)
+            let part = parseUint(partStr)
+            case task
+            of 1:
+                    taskOne()
+            of 2:
+                    taskTwo(part)
+            of 3:
+                    taskThree(part)
+            of 4:
+                    taskFour(part)
+            of 5:
+                    taskFive(part)
+            of 6:
+                    taskSix(part)
+            else:
+                    echo("Not implemented!")
+
+        except ValueError:
+            echo "Invalid task or part number"
 
 when isMainModule:
         discard main()
