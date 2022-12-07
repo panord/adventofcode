@@ -5,6 +5,7 @@ import std/rdstdin
 import std/enumerate
 from std/strutils import parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
 from std/sequtils import filter, map
+import std/strformat
 
 proc max[T: SomeInteger](list: seq[T]): (int, T) =
   var m: T = 0
@@ -118,8 +119,149 @@ proc calc_choice[T: SomeInteger](cand: char, opp: char, score: var T): void =
   else:
     raise newException(ValueError, "Invalid rock paper scissor outcome")
 
+proc isStartSeq(s: seq[char]): bool =
+    for i, e in enumerate(s):
+      for j, p in enumerate(s):
+        if i == j:
+          continue
+        if e == p:
+          return false
+    return true
+
+type
+  File = object
+    size: uint64
+    name: string
+
+type
+  Directory = object
+    name: string
+    files: seq[File]
+    dirs: seq[ref Directory]
+    parent: ref Directory
+
+
+proc dirSize(d: ref Directory, sum: ref uint64): uint64 =
+  var lsum: uint64 = 0
+  for f in d.files:
+    lsum += f.size
+
+  for d in d.dirs:
+    lsum += dirSize(d, sum)
+
+  return sum[] + lsum
+
+
+proc dirSizeThreshold(d: ref Directory, threshold: uint64, sum: ref uint64): uint64 =
+  var lsum: uint64 = 0
+  for f in d.files:
+    lsum += f.size
+
+  for d in d.dirs:
+    lsum += dirSizeThreshold(d, threshold, sum)
+
+  if lsum >= threshold:
+    return sum[]
+
+  sum[] += lsum
+  return lsum
+
+proc closestDirsize(d: ref Directory, closest: ref uint64, target: uint64): void =
+  var sum: ref uint64 = new(uint64)
+  let csz = dirSize(d, sum)
+  if csz > target:
+    echo d.name, ": ", csz
+  if csz < closest[] and csz > target:
+    echo d.name, ": ", csz, " closer than ", closest[], " to ", target
+    closest[] = csz
+
+  for d in d.dirs:
+    closestDirsize(d, closest, target)
+
+proc getdir(curr: ref Directory, name: string): ref Directory =
+  if name == "..":
+      return curr.parent
+  for d in curr.dirs:
+    if d.name == name:
+      return d
+
+  raise newException(ValueError, fmt"No such directory {name=}")
+
+proc taskSeven(part: Natural): void =
+  let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
+  var root: ref Directory = new(Directory)
+  root.name = "/"
+  root.parent = nil
+  var curr: ref Directory = root
+
+  # Skip cd /
+  var i = 1
+  while i < input.len:
+    var r = input[i]
+    let cmd = split(r, ' ')
+    if r.contains('$'):
+      case cmd[1]:
+      of "cd":
+          curr = getdir(curr, cmd[2])
+      of "ls":
+        i += 1
+        continue
+      else:
+        echo "unknown command ", cmd[1]
+    else:
+      case cmd[0]:
+      of "dir":
+        var dir = new(Directory)
+        dir.name = cmd[1]
+        dir.parent = curr
+        curr.dirs.add(dir)
+      else:
+        var file: File
+        file.size = parseUInt(cmd[0])
+        file.name = cmd[1]
+        curr.files.add(file)
+    i += 1
+
+
+  var sum: ref uint64 = new(uint64)
+  var closest: ref uint64 = new(uint64)
+  discard dirSizeThreshold(root, 100000, sum)
+  echo "Tot size of '/' under 100000 ", sum[]
+  sum[] = 0
+  closest[] = dirSize(root, sum)
+  let free = 30000000 - (70000000 - closest[])
+  echo "Need free space of ", free, " using ", closest[], " out of ", 70000000
+  closestDirsize(root, closest, free)
+  echo "Closest dir to update '/' ", closest[]
+
 proc taskSix(part: Natural): void =
-  echo "not implemented"
+  let input = readAll(stdin)
+  var start: seq[char]
+  var startmsg: seq[char]
+  var first: bool = true
+  var j = 1
+  var k = 1
+
+  for i, c in enumerate(input):
+    start.add(c)
+    startmsg.add(c)
+    if start.len == 5:
+      start.delete(0)
+
+    if startmsg.len == 15:
+      startmsg.delete(0)
+
+    if start.len == 4 and isStartSeq(start) and first:
+        echo "Start packet Index: ", j, " seq ", @start
+        first = false
+
+    if startmsg.len == 14 and isStartSeq(startmsg):
+      echo "Start msg Index: ", k, " seq ", @startmsg
+      break
+
+    j += 1
+    k += 1
+
 
 proc taskFive(part: Natural): void =
   let input = splitLines(readAll(stdin))
@@ -263,7 +405,7 @@ proc taskThree(part: Natural): void =
     raise newException(ValueError, "Invalid task part")
 
 
-    echo "Tot prio: ", tot
+  echo "Tot prio: ", tot
 
 
 proc taskTwo(part: Natural): void =
@@ -319,27 +461,33 @@ proc main(): int =
     echo "Failed to read task part"
     return -1
 
-  try:
-      let task = parseUint(taskStr)
-      let part = parseUint(partStr)
-      case task
-      of 1:
-        taskOne()
-      of 2:
-        taskTwo(part)
-      of 3:
-        taskThree(part)
-      of 4:
-        taskFour(part)
-      of 5:
-        taskFive(part)
-      of 6:
-        taskSix(part)
-      else:
-        echo("Not implemented!")
+  var task: uint64
+  var part: uint64
 
+  try:
+      task = parseUint(taskStr)
+      part = parseUint(partStr)
   except ValueError:
-      echo "Invalid task or part number"
+    echo "Invalid task or part number"
+
+  case task
+  of 1:
+    taskOne()
+  of 2:
+    taskTwo(part)
+  of 3:
+    taskThree(part)
+  of 4:
+    taskFour(part)
+  of 5:
+    taskFive(part)
+  of 6:
+    taskSix(part)
+  of 7:
+    taskSeven(part)
+  else:
+    echo("Not implemented!")
+
 
 when isMainModule:
   discard main()
