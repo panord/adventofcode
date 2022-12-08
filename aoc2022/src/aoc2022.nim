@@ -3,7 +3,7 @@
 
 import std/rdstdin
 import std/enumerate
-from std/strutils import parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
+from std/strutils import parseInt, parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
 from std/sequtils import filter, map
 import std/strformat
 
@@ -186,6 +186,77 @@ proc getdir(curr: ref Directory, name: string): ref Directory =
       return d
 
   raise newException(ValueError, fmt"No such directory {name=}")
+
+
+
+
+proc taskEight(part: Natural): void =
+  let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
+  var vismap: seq[seq[uint8]]
+  var vision: bool
+  var thresh: int
+  for y, r in enumerate(input):
+    let vr: seq[uint8] = newSeq[uint8](r.len)
+    vismap.add(vr)
+    for x, c in enumerate(r):
+      vismap[y][x] = 0
+
+  echo "Forest of size ", input.len, ", ", input[0].len
+  echo "From the left"
+  # row forward
+  for y in 0..input.len-1:
+    thresh = -1
+    for x in 0..input[0].len-1:
+      let h = parseInt(input[y][x..x])
+      if h > thresh:
+        vismap[y][x] = 1
+        thresh = cast[int](h)
+
+  echo "From the right"
+  # row backward
+  for y in 0..input.len - 1:
+    thresh = -1
+    for xr in 1..input[0].len:
+      let x = ^xr
+      let h = parseInt(input[y][x..x])
+      if h > thresh:
+        vismap[y][x] = 1
+        thresh = cast[int](h)
+
+  echo "From the top"
+  # Column first
+  for x in 0..input[0].len-1:
+    thresh = -1
+    for y in 0..input.len-1:
+      let h = parseInt(input[y][x..x])
+      if h > thresh:
+        vismap[y][x] = 1
+        thresh = cast[int](h)
+
+  echo "From the bottom"
+  # Column reverse
+  for x in 0..input[0].len-1:
+    thresh = -1
+    for yr in 1..input.len:
+      let y = ^yr
+      let h = parseInt(input[y][x..x])
+      if h > thresh:
+        echo "Height ", h, " > ", thresh
+        vismap[y][x] = 1
+        thresh = cast[int](h)
+
+  for r in vismap:
+    for c in r:
+      stdout.write c
+    stdout.write '\n'
+
+  var sum: uint = 0
+  for e in vismap:
+    for i in e:
+      sum += i
+
+  echo "Total visable trees: ", sum
+
 
 proc taskSeven(part: Natural): void =
   let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
@@ -485,6 +556,8 @@ proc main(): int =
     taskSix(part)
   of 7:
     taskSeven(part)
+  of 8:
+    taskEight(part)
   else:
     echo("Not implemented!")
 
