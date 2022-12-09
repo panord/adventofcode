@@ -188,74 +188,154 @@ proc getdir(curr: ref Directory, name: string): ref Directory =
   raise newException(ValueError, fmt"No such directory {name=}")
 
 
+proc scenicScore(map: seq[string], x0: int, y0: int, print = false): uint =
+  var thresh = parseInt(map[y0][x0..x0])
+  var viewmap: seq[seq[int]]
 
+  for y in map:
+    viewmap.add(newSeq[int](y.len))
+
+  for i,x in enumerate(viewmap):
+    for j,y in enumerate(x):
+      viewmap[i][j] = 0
+
+  viewmap[y0][x0] = thresh
+
+  var scenic: uint = 1
+  var dist: uint = 0
+  var up,down,left,right: uint= 0
+  # Look to the right
+  for x in x0 + 1..map[0].len - 1:
+      let h = parseInt(map[y0][x..x])
+      viewmap[y0][x] = h
+      right += 1
+      if h >= thresh:
+        break
+
+  # Look to the left
+  for xr in map[0].len - x0 + 1..map.len:
+      let x = ^xr
+      let h = parseInt(map[y0][^xr..^xr])
+      viewmap[y0][^xr] = h
+      left += 1
+      if h >= thresh:
+        break
+
+  # Look down
+  for y in y0 + 1..map.len - 1:
+      let h = parseInt(map[y][x0..x0])
+      viewmap[y][x0] = h
+      down += 1
+      if h >= thresh:
+        break
+
+  # Look up
+  # y0..0
+  for yr in map.len - y0 + 1..map.len:
+      let h = parseInt(map[map.len - yr][x0..x0])
+      viewmap[^yr][x0] = h
+      up += 1
+      if h >= thresh:
+        break
+
+  if print:
+    for r in viewmap:
+      for c in r:
+        stdout.write c
+      stdout.write '\n'
+  scenic = up * down * left * right
+  echo "scenic (", x0, ", ", y0, "): ", scenic, " ", up, " * ", down, " * ", left, " * ", right
+  return scenic
 
 proc taskEight(part: Natural): void =
   let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
   var vismap: seq[seq[uint8]]
   var vision: bool
   var thresh: int
-  for y, r in enumerate(input):
-    let vr: seq[uint8] = newSeq[uint8](r.len)
-    vismap.add(vr)
-    for x, c in enumerate(r):
-      vismap[y][x] = 0
+  case part:
+  of 1:
+    for y, r in enumerate(input):
+      let vr: seq[uint8] = newSeq[uint8](r.len)
+      vismap.add(vr)
+      for x, c in enumerate(r):
+        vismap[y][x] = 0
 
-  echo "Forest of size ", input.len, ", ", input[0].len
-  echo "From the left"
-  # row forward
-  for y in 0..input.len-1:
-    thresh = -1
-    for x in 0..input[0].len-1:
-      let h = parseInt(input[y][x..x])
-      if h > thresh:
-        vismap[y][x] = 1
-        thresh = cast[int](h)
-
-  echo "From the right"
-  # row backward
-  for y in 0..input.len - 1:
-    thresh = -1
-    for xr in 1..input[0].len:
-      let x = ^xr
-      let h = parseInt(input[y][x..x])
-      if h > thresh:
-        vismap[y][x] = 1
-        thresh = cast[int](h)
-
-  echo "From the top"
-  # Column first
-  for x in 0..input[0].len-1:
-    thresh = -1
+    echo "Forest of size ", input.len, ", ", input[0].len
+    echo "From the left"
+    # row forward
     for y in 0..input.len-1:
-      let h = parseInt(input[y][x..x])
-      if h > thresh:
-        vismap[y][x] = 1
-        thresh = cast[int](h)
+      thresh = -1
+      for x in 0..input[0].len-1:
+        let h = parseInt(input[y][x..x])
+        if h > thresh:
+          vismap[y][x] = 1
+          thresh = cast[int](h)
 
-  echo "From the bottom"
-  # Column reverse
-  for x in 0..input[0].len-1:
-    thresh = -1
-    for yr in 1..input.len:
-      let y = ^yr
-      let h = parseInt(input[y][x..x])
-      if h > thresh:
-        echo "Height ", h, " > ", thresh
-        vismap[y][x] = 1
-        thresh = cast[int](h)
+    echo "From the right"
+    # row backward
+    for y in 0..input.len - 1:
+      thresh = -1
+      for xr in 1..input[0].len:
+        let x = ^xr
+        let h = parseInt(input[y][x..x])
+        if h > thresh:
+          vismap[y][x] = 1
+          thresh = cast[int](h)
 
-  for r in vismap:
-    for c in r:
-      stdout.write c
-    stdout.write '\n'
+    echo "From the top"
+    # Column first
+    for x in 0..input[0].len-1:
+      thresh = -1
+      for y in 0..input.len-1:
+        let h = parseInt(input[y][x..x])
+        if h > thresh:
+          vismap[y][x] = 1
+          thresh = cast[int](h)
 
-  var sum: uint = 0
-  for e in vismap:
-    for i in e:
-      sum += i
+    echo "From the bottom"
+    # Column reverse
+    for x in 0..input[0].len-1:
+      thresh = -1
+      for yr in 1..input.len:
+        let y = ^yr
+        let h = parseInt(input[y][x..x])
+        if h > thresh:
+          echo "Height ", h, " > ", thresh
+          vismap[y][x] = 1
+          thresh = cast[int](h)
 
-  echo "Total visable trees: ", sum
+    for r in vismap:
+      for c in r:
+        stdout.write c
+      stdout.write '\n'
+
+    var sum: uint = 0
+    for e in vismap:
+      for i in e:
+        sum += i
+    echo "Total visable trees: ", sum
+  of 2:
+    discard scenicScore(input, 2, 1, true)
+    discard scenicScore(input, 2, 3, true)
+  of 3:
+    var m: uint = 0
+    var mx: int = 0
+    var my: int = 0
+    for y in 1..input.len - 2:
+      for x in 1..input[0].len - 2:
+        let ss = scenicScore(input, x, y)
+        if ss > m:
+          mx = x
+          my = y
+          m = ss
+
+    discard scenicScore(input, mx, my, true)
+    echo "Scenic score max (", mx, ", ", my, ", ", input[my][mx], "): ", m
+
+    #echo "Maximum scenic score: ", m
+  else:
+    raise newException(ValueError, "Invalid task part")
+
 
 
 proc taskSeven(part: Natural): void =
