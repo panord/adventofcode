@@ -1,6 +1,7 @@
 # This is just an example to get you started. A typical binary package
 # uses this file as the main entry point of the application.
 
+import std/math
 import std/rdstdin
 import std/enumerate
 from std/strutils import parseInt, parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
@@ -246,6 +247,85 @@ proc scenicScore(map: seq[string], x0: int, y0: int, print = false): uint =
   scenic = up * down * left * right
   echo "scenic (", x0, ", ", y0, "): ", scenic, " ", up, " * ", down, " * ", left, " * ", right
   return scenic
+
+type
+  Rope = object
+    head: tuple[x: int, y: int]
+    tail: tuple[x: int, y: int]
+
+proc taskNine(part: Natural): void =
+  let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
+  var rope: Rope
+  var viewmap: seq[seq[char]]
+  for i in 0..999:
+    viewmap.add(newSeq[char](1000))
+
+  for i in 0..999:
+    for j in 0..999:
+      viewmap[i][j] = '.'
+
+  viewmap[500][500] = 's'
+  rope.head = (500, 500)
+  rope.tail = (500, 500)
+
+  for r in input:
+    let move = r.split(' ')
+    let dir = move[0]
+    let dist = parseInt(move[1])
+    echo move
+    for i in 1..dist:
+      case dir:
+      of "R":
+        rope.head.x += 1
+        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
+        if c > 2:
+          rope.tail = rope.head
+          rope.tail.x -= 1
+      of "L":
+        rope.head.x -= 1
+        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
+        if c > 2:
+          rope.tail = rope.head
+          rope.tail.x += 1
+      of "D":
+        rope.head.y += 1
+        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
+        if c > 2:
+          rope.tail = rope.head
+          rope.tail.y -= 1
+      of "U":
+        rope.head.y -= 1
+        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
+        if c > 2:
+          rope.tail = rope.head
+          rope.tail.y += 1
+      else:
+        raise newException(ValueError, "Invalid direction")
+
+      if viewmap[rope.tail.y][rope.tail.x] != 's':
+        viewmap[rope.tail.y][rope.tail.x] = '#'
+
+    #for y, r in enumerate(viewmap):
+    #  for x, c in enumerate(r):
+    #    if (x, y) == rope.head:
+    #      stdout.write 'H'
+    #    elif (x, y) == rope.tail:
+    #      stdout.write 'T'
+    #    else:
+    #      stdout.write c
+    #  stdout.write '\n'
+    #stdout.write '\n'
+
+  var sum = 0
+  for y, r in enumerate(viewmap):
+    for x, c in enumerate(r):
+        stdout.write c
+        if c == '#' or c == 's':
+          sum += 1
+    stdout.write '\n'
+  stdout.write '\n'
+  echo "Visited ", sum, " places"
+
 
 proc taskEight(part: Natural): void =
   let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
@@ -638,6 +718,8 @@ proc main(): int =
     taskSeven(part)
   of 8:
     taskEight(part)
+  of 9:
+    taskNine(part)
   else:
     echo("Not implemented!")
 
