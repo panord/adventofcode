@@ -1,7 +1,6 @@
 # This is just an example to get you started. A typical binary package
 # uses this file as the main entry point of the application.
 
-import std/math
 import std/rdstdin
 import std/enumerate
 from std/strutils import parseInt, parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
@@ -248,82 +247,77 @@ proc scenicScore(map: seq[string], x0: int, y0: int, print = false): uint =
   echo "scenic (", x0, ", ", y0, "): ", scenic, " ", up, " * ", down, " * ", left, " * ", right
   return scenic
 
-type
-  Rope = object
-    head: tuple[x: int, y: int]
-    tail: tuple[x: int, y: int]
+proc advanceLink(link: var tuple[x: int, y: int], prev: tuple[x: int, y: int]): tuple[x: int, y: int] =
+  if abs(prev.x - link.x) > 1:
+    # to the right
+    if prev.x > link.x:
+      link = prev
+      link.x -= 1
+    elif prev.x < link.x:
+      link = prev
+      link.x += 1
+  elif abs(prev.y - link.y) > 1:
+    if prev.y > link.y:
+      link = prev
+      link.y -= 1
+    elif prev.y < link.y:
+      link = prev
+      link.y += 1
+
+  return link
 
 proc taskNine(part: Natural): void =
   let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
-  var rope: Rope
-  var viewmap: seq[seq[char]]
-  for i in 0..999:
-    viewmap.add(newSeq[char](1000))
+  var rope: seq[tuple[x: int, y: int]]
+  let size = 1000
+  var print: bool = false
 
-  for i in 0..999:
-    for j in 0..999:
+  var viewmap: seq[seq[char]]
+  for i in 0..size - 1:
+    viewmap.add(newSeq[char](size))
+
+  case part:
+  of 1:
+      rope = newSeq[tuple[x: int, y: int]](2)
+  of 2:
+      rope = newSeq[tuple[x: int, y: int]](10)
+  else:
+    raise newException(ValueError, "Invalid part number")
+
+  for i in 0..size - 1:
+    for j in 0..size - 1:
       viewmap[i][j] = '.'
 
-  viewmap[500][500] = 's'
-  rope.head = (500, 500)
-  rope.tail = (500, 500)
+  viewmap[size div 2][size div 2] = 's'
+  for l in 0..rope.len - 1:
+    rope[l] = (size div 2, size div 2)
 
   for r in input:
     let move = r.split(' ')
     let dir = move[0]
     let dist = parseInt(move[1])
-    echo move
     for i in 1..dist:
       case dir:
       of "R":
-        rope.head.x += 1
-        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
-        if c > 2:
-          rope.tail = rope.head
-          rope.tail.x -= 1
+        rope[0].x += 1
       of "L":
-        rope.head.x -= 1
-        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
-        if c > 2:
-          rope.tail = rope.head
-          rope.tail.x += 1
+        rope[0].x -= 1
       of "D":
-        rope.head.y += 1
-        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
-        if c > 2:
-          rope.tail = rope.head
-          rope.tail.y -= 1
+        rope[0].y += 1
       of "U":
-        rope.head.y -= 1
-        let c = (rope.head.x - rope.tail.x)^2 + (rope.head.y - rope.tail.y)^2
-        if c > 2:
-          rope.tail = rope.head
-          rope.tail.y += 1
+        rope[0].y -= 1
       else:
         raise newException(ValueError, "Invalid direction")
 
-      if viewmap[rope.tail.y][rope.tail.x] != 's':
-        viewmap[rope.tail.y][rope.tail.x] = '#'
+      for j in 1..rope.len - 1:
+        rope[j] = advanceLink(rope[j], rope[j-1])
+      viewmap[rope[^1].y][rope[^1].x] = '#'
 
-    #for y, r in enumerate(viewmap):
-    #  for x, c in enumerate(r):
-    #    if (x, y) == rope.head:
-    #      stdout.write 'H'
-    #    elif (x, y) == rope.tail:
-    #      stdout.write 'T'
-    #    else:
-    #      stdout.write c
-    #  stdout.write '\n'
-    #stdout.write '\n'
-
-  var sum = 0
+  var sum: uint64 = 0
   for y, r in enumerate(viewmap):
     for x, c in enumerate(r):
-        stdout.write c
         if c == '#' or c == 's':
           sum += 1
-    stdout.write '\n'
-  stdout.write '\n'
   echo "Visited ", sum, " places"
 
 
