@@ -6,6 +6,7 @@ import std/enumerate
 from std/strutils import parseInt, parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
 from std/sequtils import filter, map
 import std/strformat
+from std/algorithm import sort
 
 proc max[T: SomeInteger](list: seq[T]): (int, T) =
   var m: T = 0
@@ -265,6 +266,75 @@ proc advanceLink(link: var tuple[x: int, y: int], prev: tuple[x: int, y: int]): 
       link.y += 1
 
   return link
+
+type
+  Oper = object
+    lhs: string
+    rhs: string
+    oper: string
+
+type
+  Test = object
+    factor: int
+
+type
+  Monkey = object
+    id: int
+    items: seq[int]
+    oper: Oper
+    test: tuple[d: int, t: uint, f: uint]
+
+proc updateWorry(x: int, oper: Oper): int =
+  let lhs: int = (if oper.lhs == "old": x else: parseInt(oper.lhs))
+  let rhs: int = (if oper.rhs == "old": x else: parseInt(oper.rhs))
+  case oper.oper:
+  of "*":
+    return lhs * rhs
+  of "+":
+    return lhs + rhs
+  else:
+    raise newException(ValueError, "Invalid operation")
+
+proc parseMonkey(str: seq[string]): Monkey =
+  var m: Monkey
+  m.id = parseInt(str[0].split({' ', ':'})[1])
+  m.items = filter(str[1].split({' ', ','}),
+              proc(x: string): bool = x != "")[2..^1].map(parseInt)
+  var tmp = str[2].split(' ').filter(proc(x: string): bool = x != "")[^3..^1]
+  m.oper = Oper(lhs: tmp[0], rhs: tmp[2], oper: tmp[1])
+  m.test.d = parseInt(filter(str[3].split(' '), proc(x: string): bool = x != "")[^1])
+  m.test.t = parseUInt(filter(str[4].split(' '), proc(x: string): bool = x != "")[^1])
+  m.test.f = parseUInt(filter(str[5].split(' '), proc(x: string): bool = x != "")[^1])
+  return m
+
+proc monkeyThrow(m: var Monkey): (uint, int) =
+  let item = m.items[0]
+  var uitem = updateWorry(item, m.oper) div 3
+  var to: uint = if uitem mod m.test.d == 0: m.test.t else: m.test.f
+  m.items.delete(0)
+  echo "Monkey ", m.id ," threw ", item, " to ", to, " with worry ", uitem
+  return (to, uitem)
+
+proc taskEleven(part: Natural): void =
+  let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
+  let rounds = 20
+  var monkeys: seq[Monkey]
+  var active: seq[int]
+
+  var r = 0
+  while r < input.len - 1:
+    monkeys.add(parseMonkey(input[r..r+5]))
+    r += 6
+  active = newSeq[int](monkeys.len)
+
+  for r in 1..rounds:
+    for i in 0..monkeys.len - 1:
+      active[i] += monkeys[i].items.len
+      for e in 0..monkeys[i].items.len - 1:
+        let (to, item) = monkeys[i].monkeyThrow()
+        monkeys[to].items.add(item)
+  sort(active, system.cmp[int])
+  echo "Monkey business: ", active[^1] * active[^2]
 
 proc taskNine(part: Natural): void =
   let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
@@ -714,6 +784,8 @@ proc main(): int =
     taskEight(part)
   of 9:
     taskNine(part)
+  of 11:
+    taskEleven(part)
   else:
     echo("Not implemented!")
 
