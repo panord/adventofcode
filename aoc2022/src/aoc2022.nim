@@ -336,6 +336,48 @@ proc taskEleven(part: Natural): void =
   sort(active, system.cmp[int])
   echo "Monkey business: ", active[^1] * active[^2]
 
+proc exec(instr: string, state: var tuple[cycle: uint, ip: uint, reg: seq[int64]]): void =
+  let op = instr.split(' ')
+  case op[0]:
+  of "noop":
+    state.cycle += 1
+    state.ip += 1
+  of "addx":
+    state.reg[0] += parseInt(op[1])
+  of "store"
+  else:
+   raise newException(ValueError, "invalid instruction")
+  state.ip += 1
+
+proc taskTen(part: Natural): void =
+  let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
+  var state: tuple[cycle: uint, ip: uint, reg: seq[int64]] = (0'u, 0'u, newSeq[int64](2))
+  var signal: int64= 0
+  while true:
+    if state.ip >= cast[uint](input.len):
+      break
+    exec(input[state.ip], state)
+    case state.cycle:
+    of 20:
+      echo state.cycle, " ", state.reg[0]
+      signal += cast[int64](state.cycle) * state.reg[0]
+    of 60:
+      echo state.cycle, " ", state.reg[0]
+      signal += cast[int64](state.cycle) * state.reg[0]
+    of 100:
+      echo state.cycle, " ", state.reg[0]
+      signal += cast[int64](state.cycle) * state.reg[0]
+    of 140:
+      echo state.cycle, " ", state.reg[0]
+      signal += cast[int64](state.cycle) * state.reg[0]
+    of 220:
+      echo state.cycle, " ", state.reg[0]
+      signal += cast[int64](state.cycle) * state.reg[0]
+    else:
+      continue
+  echo "Signalsum: ", signal
+
+
 proc taskNine(part: Natural): void =
   let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
   var rope: seq[tuple[x: int, y: int]]
@@ -784,6 +826,8 @@ proc main(): int =
     taskEight(part)
   of 9:
     taskNine(part)
+  of 10:
+    taskTen(part)
   of 11:
     taskEleven(part)
   else:
