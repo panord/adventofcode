@@ -6,6 +6,7 @@ import std/enumerate
 from std/strutils import parseInt, parseUInt, splitLines, isUpperAscii, split, replace, isDigit, multiReplace
 from std/sequtils import filter, map
 import std/strformat
+import std/tables
 from std/algorithm import sort
 
 proc max[T: SomeInteger](list: seq[T]): (int, T) =
@@ -336,46 +337,56 @@ proc taskEleven(part: Natural): void =
   sort(active, system.cmp[int])
   echo "Monkey business: ", active[^1] * active[^2]
 
-proc exec(instr: string, state: var tuple[cycle: uint, ip: uint, reg: seq[int64]]): void =
+proc exec(instr: string, state: var tuple[cycle: uint, ip: uint, reg: seq[int64],
+                  exec: Table[uint, tuple[reg: int, val: int]]]): void =
+
   let op = instr.split(' ')
   case op[0]:
   of "noop":
     state.cycle += 1
-    state.ip += 1
   of "addx":
-    state.reg[0] += parseInt(op[1])
-  of "store"
+    state.exec[state.cycle + 2] = (0, parseInt(op[1]))
+    state.cycle += 2
   else:
    raise newException(ValueError, "invalid instruction")
-  state.ip += 1
+
+  case state.cycle:
+  of 20:
+    state.reg[1] += cast[int64](state.cycle) * state.reg[0]
+  of 60:
+    state.reg[1] += cast[int64](state.cycle) * state.reg[0]
+  of 100:
+    state.reg[1] += cast[int64](state.cycle) * state.reg[0]
+  of 140:
+    state.reg[1] += cast[int64](state.cycle) * state.reg[0]
+  of 220:
+    state.reg[1] += cast[int64](state.cycle) * state.reg[0]
+  else:
+    signalsum += 0
+
+
 
 proc taskTen(part: Natural): void =
   let input = filter(splitLines(readAll(stdin)), proc(x: string): bool = x != "")
-  var state: tuple[cycle: uint, ip: uint, reg: seq[int64]] = (0'u, 0'u, newSeq[int64](2))
-  var signal: int64= 0
+  var state: tuple[cycle: uint, ip: uint, reg: seq[int64],
+                  exec: Table[uint, tuple[reg: int, val: int]]]
+                  = (0'u, 0'u, newSeq[int64](2), {0'u : (0, 0)}.toTable)
+  var signalsum: int64 = 0
+  state.reg[0] = 1
   while true:
     if state.ip >= cast[uint](input.len):
       break
+
     exec(input[state.ip], state)
-    case state.cycle:
-    of 20:
-      echo state.cycle, " ", state.reg[0]
-      signal += cast[int64](state.cycle) * state.reg[0]
-    of 60:
-      echo state.cycle, " ", state.reg[0]
-      signal += cast[int64](state.cycle) * state.reg[0]
-    of 100:
-      echo state.cycle, " ", state.reg[0]
-      signal += cast[int64](state.cycle) * state.reg[0]
-    of 140:
-      echo state.cycle, " ", state.reg[0]
-      signal += cast[int64](state.cycle) * state.reg[0]
-    of 220:
-      echo state.cycle, " ", state.reg[0]
-      signal += cast[int64](state.cycle) * state.reg[0]
-    else:
-      continue
-  echo "Signalsum: ", signal
+    if state.exec.hasKey(state.cycle):
+      let v =  state.exec[state.cycle].val
+      let r = state.exec[state.cycle].reg
+      echo "Add ", v, " to ", r
+      state.reg[r] += v
+
+
+    state.ip += 1
+  echo "Signalsum: ", signalsum
 
 
 proc taskNine(part: Natural): void =
